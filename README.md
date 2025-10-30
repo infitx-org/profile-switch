@@ -13,7 +13,7 @@ and automated onboarding of payment managers.
         ref: main # replace this with a tag for production use
     ```
 
-1. Configure `custom-config/cluster.yaml`:
+1. Configure `custom-config/cluster-config.yaml`:
 
     ```yaml
     currency: GHS # the currency code for the switch deployment
@@ -23,7 +23,7 @@ and automated onboarding of payment managers.
 1. Enable the needed test payment managers in `custom-config/pm4ml-vars.yaml`:
 
    ⚠️ **IMPORTANT**
-   
+
    This can only be done only before the initial deployment,
    otherwise the payment managers need to be manually added to Keycloak.
 
