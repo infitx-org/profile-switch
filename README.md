@@ -13,27 +13,28 @@ and automated onboarding of payment managers.
         ref: main # replace this with a tag for production use
     ```
 
-2. Configure `custom-config/cluster.yaml`:
+1. Configure `custom-config/cluster.yaml`:
 
     ```yaml
     currency: GHS # the currency code for the switch deployment
     switch: gisp # the switch name to be used in domain names
     ```
 
-3. Enable the needed test payment managers in `custom-config/pm4ml-vars.yaml`:
+1. Enable the needed test payment managers in `custom-config/pm4ml-vars.yaml`:
 
-   > [!WARNING]
-   > this can only be done only before the initial deployment,
-   > otherwise the payment managers need to be manually added to Keycloak
+   ⚠️ **IMPORTANT**
+   
+   This can only be done only before the initial deployment,
+   otherwise the payment managers need to be manually added to Keycloak.
 
    ```yaml
    pm4mls:
        test-${switch}-dfsp1:
-           currency: ${currency} # set this to enable the PM
+           currency: ${currency} # this line enables the PM
        test-${switch}-dfsp2:
-           currency: ${currency} # set this to enable the PM
+           currency: ${currency} # this line enables the PM
        perf-${switch}-dfsp1:
-           currency: ${currency} # set this to enable the PM
+           currency: ${currency} # this line enables the PM
        perf-${switch}-dfsp2:
-           currency: ${currency} # set this to enable the PM
+           currency: ${currency} # this line enables the PM
    ```
