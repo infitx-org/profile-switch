@@ -1,0 +1,66 @@
+quoting-service:
+    quoting-service-handler:
+        configOverride:
+            # .RULErc: # example rule configuration to put in the env's custom-config/mojaloop-values-override.yaml
+            #     rule:
+            #         maxAmount: # maximum amount per currency
+            #             USD: 100
+            #             EUR: 200
+            #         currencyAllow: # allowed currencies, fallback to maxAmount keys
+            #             - USD
+            #         partyAllow: # allowed parties in format fsp:type:id
+            #             - fsp1:type1:id1
+            #             - fsp2:type2:id2
+            config/rules.js: |
+                const {
+                    maxAmount,
+                    currencyAllow = maxAmount ? Object.keys(maxAmount) : null,
+                    proxyAllow,
+                    partyAllow
+                } = require('rc')('RULE').rule || {}
+
+                const parties = partyAllow?.map(identifier => {
+                    const [fspId, partyIdType, partyIdentifier] = identifier.split(':')
+                    return fspId && partyIdType && partyIdentifier && {fspId, partyIdType, partyIdentifier}
+                }).filter(Boolean)
+
+                module.exports = [...Object.entries(maxAmount || {}).map(([currency, limit]) => ({
+                    conditions: { // transfer limit
+                        all: [
+                            { fact: 'operation', operator: 'equal', value: 'quoteRequest' },
+                            { fact: 'payload', path: '$.amount.currency', operator: 'equal', value: currency },
+                            { fact: 'payload', path: '$.amount.amount', operator: 'greaterThan', value: Number(limit) }
+                        ]
+                    },
+                    event: {
+                        type: 'INVALID_QUOTE_REQUEST',
+                        params: { FSPIOPError: 'PAYER_LIMIT_ERROR', message: 'Regional scheme: amount limit exceeded' }
+                    }
+                })), currencyAllow && {
+                    conditions: { // allowed currencies
+                        all: [
+                            { fact: 'operation', operator: 'equal', value: 'quoteRequest' },
+                            { fact: 'payload', path: '$.amount.currency', operator: 'notIn', value: currencyAllow }
+                        ]
+                    },
+                    event: {
+                        type: 'INVALID_QUOTE_REQUEST',
+                        params: { FSPIOPError: 'PAYER_UNSUPPORTED_CURRENCY', message: 'Regional scheme: invalid currency' }
+                    }
+                }, parties && {
+                    conditions: { // allowed parties
+                        all: [
+                            { fact: 'operation', operator: 'equal', value: 'quoteRequest' },
+                            {
+                                any: [
+                                    { not: { fact: 'payload', path: '$.payer.partyIdInfo', operator: 'someValue:deepEqual', value: parties } },
+                                    { not: { fact: 'payload', path: '$.payee.partyIdInfo', operator: 'someValue:deepEqual', value: parties } }
+                                ]
+                            }
+                        ]
+                    },
+                    event: {
+                        type: 'INVALID_QUOTE_REQUEST',
+                        params: { FSPIOPError: 'PARTY_NOT_FOUND', message: 'Regional scheme: invalid party' }
+                    }
+                }].filter(Boolean)
