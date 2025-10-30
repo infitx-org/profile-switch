@@ -1,7 +1,6 @@
 pm4mls:
   test-${switch}-dfsp1: &test-dfsp
     pm4ml_enabled: false
-    currency: ${currency}
   test-${switch}-dfsp2: *test-dfsp
   perf-${switch}-dfsp1: *test-dfsp
   perf-${switch}-dfsp2: *test-dfsp
